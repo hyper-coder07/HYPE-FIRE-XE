@@ -1,0 +1,182 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "title": "PlayerProfile",
+      "description": "Authenticated player profile, currency wallet, equipped cosmetics, and low-end device optimization settings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the player."
+        },
+        "callsign": {
+          "type": "string",
+          "description": "In-game player callsign (2 to 24 characters)."
+        },
+        "diamonds": {
+          "type": "integer",
+          "description": "Premium diamond currency balance."
+        },
+        "goldCoins": {
+          "type": "integer",
+          "description": "Standard gold coin currency balance."
+        },
+        "booyahs": {
+          "type": "integer",
+          "description": "Total first-place victories."
+        },
+        "eliminations": {
+          "type": "integer",
+          "description": "Lifetime battle royale eliminations."
+        },
+        "matchesPlayed": {
+          "type": "integer",
+          "description": "Total matches completed."
+        },
+        "equippedOutfitId": {
+          "type": "string",
+          "description": "Currently equipped character bundle ID."
+        },
+        "equippedWeaponSkinId": {
+          "type": "string",
+          "description": "Currently equipped weapon skin ID."
+        },
+        "equippedParachuteId": {
+          "type": "string",
+          "description": "Currently equipped parachute skin ID."
+        },
+        "ownedCosmeticIds": {
+          "type": "array",
+          "description": "Bounded list of cosmetic IDs unlocked by the player."
+        },
+        "graphicsPreset": {
+          "type": "string",
+          "enum": ["ULTRA_LOW", "SMOOTH", "BALANCED", "HIGH"],
+          "description": "Low-end device graphics preset."
+        },
+        "targetFps": {
+          "type": "integer",
+          "description": "Target frame rate cap (30, 45, or 60)."
+        },
+        "resolutionScale": {
+          "type": "number",
+          "description": "Canvas detail scale factor between 0.6 and 1.0."
+        },
+        "shadowsEnabled": {
+          "type": "boolean",
+          "description": "Whether drop shadows are rendered in arena."
+        },
+        "particlesEnabled": {
+          "type": "boolean",
+          "description": "Whether muzzle flash and hit particles are rendered."
+        },
+        "aimAssistEnabled": {
+          "type": "boolean",
+          "description": "Whether smart mobile aim-assist lock is active."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "callsign",
+        "diamonds",
+        "goldCoins",
+        "booyahs",
+        "eliminations",
+        "matchesPlayed",
+        "equippedOutfitId",
+        "equippedWeaponSkinId",
+        "equippedParachuteId",
+        "ownedCosmeticIds",
+        "graphicsPreset",
+        "targetFps",
+        "resolutionScale",
+        "shadowsEnabled",
+        "particlesEnabled",
+        "aimAssistEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MatchRecord": {
+      "title": "MatchRecord",
+      "description": "Summary of a completed battle royale match.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the player."
+        },
+        "placement": {
+          "type": "integer",
+          "description": "Final rank from 1 to 30."
+        },
+        "eliminations": {
+          "type": "integer",
+          "description": "Enemies eliminated during the match."
+        },
+        "damageDealt": {
+          "type": "integer",
+          "description": "Total damage dealt during the match."
+        },
+        "survivalSeconds": {
+          "type": "integer",
+          "description": "Duration survived in seconds."
+        },
+        "goldEarned": {
+          "type": "integer",
+          "description": "Gold coins awarded for the match."
+        },
+        "diamondsEarned": {
+          "type": "integer",
+          "description": "Diamonds awarded for the match."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["BERMUDA_BLITZ", "CLASH_DROP"],
+          "description": "Match mode identifier."
+        },
+        "booyah": {
+          "type": "boolean",
+          "description": "True if placement == 1."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "placement",
+        "eliminations",
+        "damageDealt",
+        "survivalSeconds",
+        "goldEarned",
+        "diamondsEarned",
+        "mode",
+        "booyah",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/PlayerProfile" },
+      "description": "Player profile, cosmetic wallet/loadout, and low-end graphics preferences."
+    },
+    "/users/{userId}/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/MatchRecord" },
+      "description": "Per-user battle royale match history records."
+    }
+  }
+}

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">DropZone BR</string>
+    <string name="tagline_drop">Tactical Survival • Low-End Tuned • 60 FPS</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="nav_lobby">Lobby</string>
+    <string name="nav_shop">Shop</string>
+    <string name="nav_studio">AI Studio</string>
+    <string name="nav_optimizer">Optimizer</string>
+    <string name="drop_in_cta">DROP IN</string>
+    <string name="booyah_title">BOOYAH!</string>
+    <string name="eliminated_title">ELIMINATED</string>
+    <string name="api_key_missing_notice">GEMINI_API_KEY is not configured. Open the Secrets panel in AI Studio to add your Gemini API key for Lyria 3 music and Gemini Omni 1.2 Flash video generation.</string>
+</resources>

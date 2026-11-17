@@ -1,0 +1,8 @@
+{
+  "name": "Remix DropZone BR",
+  "description": "Tactical battle royale game with smooth controls, low-end device FPS optimization, vibrant cosmetic shop, AI music studio, and photo-to-video highlight animator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

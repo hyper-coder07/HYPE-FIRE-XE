@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Shared Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validation Helpers
+    function isValidGraphicsPreset(preset) {
+      return preset in ['ULTRA_LOW', 'SMOOTH', 'BALANCED', 'HIGH'];
+    }
+
+    function isValidPlayerProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.callsign is string && data.callsign.size() >= 2 && data.callsign.size() <= 24 &&
+             data.diamonds is int && data.diamonds >= 0 && data.diamonds <= 1000000 &&
+             data.goldCoins is int && data.goldCoins >= 0 && data.goldCoins <= 10000000 &&
+             data.booyahs is int && data.booyahs >= 0 && data.booyahs <= 100000 &&
+             data.eliminations is int && data.eliminations >= 0 && data.eliminations <= 1000000 &&
+             data.matchesPlayed is int && data.matchesPlayed >= 0 && data.matchesPlayed <= 100000 &&
+             data.equippedOutfitId is string && data.equippedOutfitId.size() >= 1 && data.equippedOutfitId.size() <= 64 &&
+             data.equippedWeaponSkinId is string && data.equippedWeaponSkinId.size() >= 1 && data.equippedWeaponSkinId.size() <= 64 &&
+             data.equippedParachuteId is string && data.equippedParachuteId.size() >= 1 && data.equippedParachuteId.size() <= 64 &&
+             data.ownedCosmeticIds is list && data.ownedCosmeticIds.size() >= 1 && data.ownedCosmeticIds.size() <= 40 &&
+             data.ownedCosmeticIds[0] is string &&
+             isValidGraphicsPreset(data.graphicsPreset) &&
+             data.targetFps is int && (data.targetFps == 30 || data.targetFps == 45 || data.targetFps == 60) &&
+             (data.resolutionScale is float || data.resolutionScale is int) && data.resolutionScale >= 0.5 && data.resolutionScale <= 1.0 &&
+             data.shadowsEnabled is bool &&
+             data.particlesEnabled is bool &&
+             data.aimAssistEnabled is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMatchRecord(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.placement is int && data.placement >= 1 && data.placement <= 30 &&
+             data.eliminations is int && data.eliminations >= 0 && data.eliminations <= 30 &&
+             data.damageDealt is int && data.damageDealt >= 0 && data.damageDealt <= 50000 &&
+             data.survivalSeconds is int && data.survivalSeconds >= 0 && data.survivalSeconds <= 3600 &&
+             data.goldEarned is int && data.goldEarned >= 0 && data.goldEarned <= 5000 &&
+             data.diamondsEarned is int && data.diamondsEarned >= 0 && data.diamondsEarned <= 500 &&
+             data.mode is string && (data.mode == 'BERMUDA_BLITZ' || data.mode == 'CLASH_DROP') &&
+             data.booyah is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'callsign', 'diamonds', 'goldCoins', 'booyahs',
+                         'eliminations', 'matchesPlayed', 'equippedOutfitId',
+                         'equippedWeaponSkinId', 'equippedParachuteId', 'ownedCosmeticIds',
+                         'graphicsPreset', 'targetFps', 'resolutionScale',
+                         'shadowsEnabled', 'particlesEnabled', 'aimAssistEnabled',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'callsign', 'diamonds', 'goldCoins', 'booyahs',
+                         'eliminations', 'matchesPlayed', 'equippedOutfitId',
+                         'equippedWeaponSkinId', 'equippedParachuteId', 'ownedCosmeticIds',
+                         'graphicsPreset', 'targetFps', 'resolutionScale',
+                         'shadowsEnabled', 'particlesEnabled', 'aimAssistEnabled',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPlayerProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidPlayerProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action 1: Equip Cosmetics
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'equippedOutfitId', 'equippedWeaponSkinId', 'equippedParachuteId', 'updatedAt'
+                         ]) ||
+                         // Action 2: Purchase Cosmetic
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'diamonds', 'goldCoins', 'ownedCosmeticIds',
+                           'equippedOutfitId', 'equippedWeaponSkinId', 'equippedParachuteId', 'updatedAt'
+                         ]) ||
+                         // Action 3: Update Low-End Graphics & Control Settings
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'graphicsPreset', 'targetFps', 'resolutionScale',
+                           'shadowsEnabled', 'particlesEnabled', 'aimAssistEnabled',
+                           'callsign', 'updatedAt'
+                         ]) ||
+                         // Action 4: Record Match Rewards
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'diamonds', 'goldCoins', 'booyahs', 'eliminations',
+                           'matchesPlayed', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if false;
+
+      match /matches/{matchId} {
+        allow get: if isOwner(userId) && isValidId(matchId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(matchId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll([
+                           'userId', 'placement', 'eliminations', 'damageDealt',
+                           'survivalSeconds', 'goldEarned', 'diamondsEarned',
+                           'mode', 'booyah', 'createdAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'placement', 'eliminations', 'damageDealt',
+                           'survivalSeconds', 'goldEarned', 'diamondsEarned',
+                           'mode', 'booyah', 'createdAt'
+                         ]) &&
+                         isValidMatchRecord(incoming());
+
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(matchId);
+      }
+    }
+  }
+}
